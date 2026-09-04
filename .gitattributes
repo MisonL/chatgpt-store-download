@@ -1,0 +1,6 @@
+# Keep source and documentation portable across Windows, macOS and Linux.
+* text=auto
+*.md text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.js text eol=lf

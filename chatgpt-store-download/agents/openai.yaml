@@ -1,0 +1,4 @@
+interface:
+  display_name: "ChatGPT Store Download"
+  short_description: "跨平台发现并校验 ChatGPT 官方临时下载直链和元数据"
+  default_prompt: "使用 $chatgpt-store-download 先确认当前平台和 Node.js 运行方式（包括 NVM/nvm-windows 等），再查询微软官方 StoreEdge/FE3，按目标 Windows 架构发现并校验最新 ChatGPT Work/Codex MSIX 临时直链；默认采用兼容模式跳过 TLS 证书校验并明确警告，需要严格校验时使用 --strict-tls；仅当严格模式下整体成功时将 tls_verified 标记为 true，报告版本、大小、哈希、验证范围和元数据警告；需要离线验证逻辑时使用 --self-test。不下载文件、不安装或绕过许可证。"
