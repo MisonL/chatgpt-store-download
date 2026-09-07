@@ -1,0 +1,40 @@
+{
+  "name": "chatgpt-store-download",
+  "version": "1.0.0",
+  "description": "Install the ChatGPT Store Download Codex Skill.",
+  "bin": {
+    "chatgpt-store-download": "bin/install.js"
+  },
+  "files": [
+    "bin/install.js",
+    "chatgpt-store-download/SKILL.md",
+    "chatgpt-store-download/agents/openai.yaml",
+    "chatgpt-store-download/scripts/fetch_links.js",
+    "LICENSE",
+    "README.md"
+  ],
+  "keywords": [
+    "codex",
+    "skill",
+    "chatgpt",
+    "microsoft-store",
+    "msix"
+  ],
+  "author": "MisonL",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MisonL/chatgpt-store-download.git"
+  },
+  "homepage": "https://github.com/MisonL/chatgpt-store-download",
+  "bugs": {
+    "url": "https://github.com/MisonL/chatgpt-store-download/issues"
+  },
+  "engines": {
+    "node": ">=14"
+  },
+  "scripts": {
+    "check": "node --check bin/install.js && node --check chatgpt-store-download/scripts/fetch_links.js && node --check test/install.test.js && node test/install.test.js && node chatgpt-store-download/scripts/fetch_links.js --self-test --json",
+    "test": "npm run check"
+  }
+}

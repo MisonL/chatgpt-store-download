@@ -11,6 +11,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# npm local packaging output
+*.tgz
+
 # Local credentials and temporary download artifacts
 .env
 .env.*

@@ -12,6 +12,7 @@
 const https = require("https");
 const { URL } = require("url");
 const crypto = require("crypto");
+const os = require("os");
 
 const DEFAULT_PRODUCT_ID = "9PLM9XGG6VKS";
 const EXPECTED_PACKAGE_FAMILY_NAME = "OpenAI.Codex_2p2nqsd0c76g0";
@@ -95,6 +96,14 @@ function configureUtf8Output() {
     if (stream && typeof stream.setDefaultEncoding === "function") {
       stream.setDefaultEncoding("utf8");
     }
+  }
+}
+
+function safeKernelRelease() {
+  try {
+    return typeof os.release === "function" ? String(os.release() || "") : "";
+  } catch (error) {
+    return "";
   }
 }
 
@@ -340,6 +349,44 @@ function isoUtc(value) {
   return new Date(value).toISOString();
 }
 
+const ISO_TIMESTAMP_RE =
+  /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,9})?([Zz]|[+-]\d{2}:\d{2})$/;
+
+function isValidTimestamp(value) {
+  const text = String(value || "").trim();
+  const match = ISO_TIMESTAMP_RE.exec(text);
+  if (!match) return false;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const hour = Number(match[4]);
+  const minute = Number(match[5]);
+  const second = Number(match[6]);
+  const leapYear = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const daysInMonth = [31, leapYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  if (
+    month < 1 ||
+    month > 12 ||
+    day < 1 ||
+    day > daysInMonth[month - 1] ||
+    hour > 23 ||
+    minute > 59 ||
+    second > 59
+  ) {
+    return false;
+  }
+  const zone = match[7].toUpperCase();
+  if (zone !== "Z" && !/^[-+]\d{2}:\d{2}$/.test(zone)) return false;
+  if (zone !== "Z") {
+    const offsetHour = Number(zone.slice(1, 3));
+    const offsetMinute = Number(zone.slice(4, 6));
+    if (offsetHour > 23 || offsetMinute > 59) {
+      return false;
+    }
+  }
+  return !Number.isNaN(Date.parse(text));
+}
+
 function localName(name) {
   const text = String(name || "");
   const colon = text.lastIndexOf(":");
@@ -573,9 +620,29 @@ function childNode(node, name) {
   return (node.children || []).find((item) => localName(item.name) === name) || null;
 }
 
+function childNodes(node, name) {
+  return (node.children || []).filter((item) => localName(item.name) === name);
+}
+
 function childText(node, name) {
   const item = childNode(node, name);
   return item ? String(item.text || "").trim() : "";
+}
+
+function uniqueChildNode(node, name, message, options) {
+  const matches = childNodes(node, name);
+  const details = Object.assign(
+    { code: "fe3_metadata_incomplete", stage: "fe3" },
+    options || {}
+  );
+  if (matches.length !== 1) {
+    throw new DiscoveryError(message, details);
+  }
+  return matches[0];
+}
+
+function nonEmptyDescendants(node, name) {
+  return findNodes(node, name).filter((item) => String(item.text || "").trim());
 }
 
 function descendantText(node, name) {
@@ -599,6 +666,12 @@ function parseFragment(value) {
 }
 
 function ensureAllowedHost(url, allowedHosts) {
+  if (!Array.isArray(allowedHosts) || allowedHosts.length === 0) {
+    throw new DiscoveryError("未配置允许访问的主机白名单", {
+      code: "skill_configuration_error",
+      stage: "configuration",
+    });
+  }
   const raw = String(url || "");
   if (UNSAFE_CONTROL_RE.test(raw)) {
     throw new DiscoveryError("URL 含有控制字符");
@@ -618,7 +691,7 @@ function ensureAllowedHost(url, allowedHosts) {
   if (parsed.port && parsed.port !== "443") {
     throw new DiscoveryError("URL 使用了不允许的端口");
   }
-  if (allowedHosts && allowedHosts.length && !allowedHosts.includes(parsed.hostname.toLowerCase())) {
+  if (!allowedHosts.includes(parsed.hostname.toLowerCase())) {
     throw new DiscoveryError("拒绝访问未授权主机：" + parsed.hostname);
   }
   return parsed;
@@ -914,7 +987,14 @@ async function soapPost(url, body, args) {
 }
 
 function throwIfSoapFault(root) {
-  const fault = findNodes(root, "Fault")[0];
+  const faults = findNodes(root, "Fault");
+  if (faults.length > 1) {
+    throw new DiscoveryError("FE3 返回了多个 SOAP Fault", {
+      code: "fe3_metadata_ambiguous",
+      stage: "fe3",
+    });
+  }
+  const fault = faults[0];
   if (!fault) return;
   const reason = (descendantText(fault, "Text") || descendantText(fault, "Reason"))
     .replace(/[\u0000-\u001f\u007f]+/g, " ")
@@ -1060,12 +1140,24 @@ function urlRequest(updateId, revision, ring) {
 async function getCookie(args) {
   const root = parseXml((await soapPost(FE3_URL, cookieRequest(), args)).toString("utf8"));
   throwIfSoapFault(root);
-  const item = findNodes(root, "EncryptedData").find((node) => String(node.text || "").trim());
-  if (!item) throw new DiscoveryError("FE3 GetCookie 未返回 EncryptedData");
-  const expirationNode = findNodes(root, "Expiration").find((node) => String(node.text || "").trim());
-  const expiration = expirationNode ? String(expirationNode.text || "").trim() : "";
+  const encryptedDataNodes = nonEmptyDescendants(root, "EncryptedData");
+  if (encryptedDataNodes.length !== 1) {
+    throw new DiscoveryError("FE3 GetCookie 返回的 EncryptedData 不唯一", {
+      code: "fe3_metadata_ambiguous",
+      stage: "fe3_cookie",
+    });
+  }
+  const expirationNodes = nonEmptyDescendants(root, "Expiration");
+  if (expirationNodes.length !== 1) {
+    throw new DiscoveryError("FE3 GetCookie 返回的 Expiration 不唯一", {
+      code: "fe3_metadata_ambiguous",
+      stage: "fe3_cookie",
+    });
+  }
+  const item = encryptedDataNodes[0];
+  const expiration = String(expirationNodes[0].text || "").trim();
   const expirationMs = Date.parse(expiration);
-  if (!expiration || Number.isNaN(expirationMs) || expirationMs <= Date.now()) {
+  if (!isValidTimestamp(expiration) || expirationMs <= Date.now()) {
     throw new DiscoveryError("FE3 GetCookie 未返回有效的过期时间");
   }
   return {
@@ -1298,7 +1390,7 @@ async function storeedgeMetadata(productId, args) {
     "LastUpdateDateUtc",
     128
   );
-  if (Number.isNaN(Date.parse(lastUpdateUtc))) {
+  if (!isValidTimestamp(lastUpdateUtc)) {
     throw new DiscoveryError("StoreEdge LastUpdateDateUtc 格式无效", {
       code: "storeedge_metadata_invalid",
       stage: "storeedge",
@@ -1354,14 +1446,25 @@ function parseSyncUpdates(payload, packageFamily) {
     : packageFamily;
 
   for (const info of findNodes(root, "UpdateInfo")) {
-    const outerId = childText(info, "ID");
+    const idNode = uniqueChildNode(
+      info,
+      "ID",
+      "FE3 UpdateInfo 的更新 ID 缺失或重复",
+      { stage: "fe3_sync" }
+    );
+    const outerId = String(idNode.text || "").trim();
     if (!outerId) {
       throw new DiscoveryError("FE3 UpdateInfo 缺少更新 ID", {
         code: "fe3_metadata_incomplete",
         stage: "fe3_sync",
       });
     }
-    const xmlNode = childNode(info, "Xml");
+    const xmlNode = uniqueChildNode(
+      info,
+      "Xml",
+      "FE3 UpdateInfo 的 XML 元数据缺失或重复",
+      { stage: "fe3_sync" }
+    );
     if (!xmlNode || !String(xmlNode.text || "").trim()) {
       throw new DiscoveryError("FE3 UpdateInfo 缺少 XML 元数据", {
         code: "fe3_metadata_incomplete",
@@ -1369,13 +1472,19 @@ function parseSyncUpdates(payload, packageFamily) {
       });
     }
     const fragment = parseFragment(xmlNode.text);
-    const identity = findNodes(fragment, "UpdateIdentity")[0];
-    if (!identity) {
-      throw new DiscoveryError("FE3 UpdateInfo 缺少 UpdateIdentity", {
+    const fragmentBody = childNode(fragment, "fragment");
+    if (!fragmentBody) {
+      throw new DiscoveryError("FE3 UpdateInfo XML 片段缺少根元素", {
         code: "fe3_metadata_incomplete",
         stage: "fe3_sync",
       });
     }
+    const identity = uniqueChildNode(
+      fragmentBody,
+      "UpdateIdentity",
+      "FE3 UpdateInfo 的顶层 UpdateIdentity 缺失或重复",
+      { code: "fe3_metadata_ambiguous", stage: "fe3_sync" }
+    );
     for (const metadata of findNodes(fragment, "AppxMetadata")) {
       const moniker = getAttr(metadata, "PackageMoniker").trim();
       if (!moniker) continue;
@@ -1437,14 +1546,25 @@ function parseSyncUpdates(payload, packageFamily) {
   }
 
   for (const update of findNodes(root, "Update")) {
-    const outerId = childText(update, "ID");
+    const idNode = uniqueChildNode(
+      update,
+      "ID",
+      "FE3 Update 的更新 ID 缺失或重复",
+      { stage: "fe3_sync" }
+    );
+    const outerId = String(idNode.text || "").trim();
     if (!outerId) {
       throw new DiscoveryError("FE3 Update 缺少更新 ID", {
         code: "fe3_metadata_incomplete",
         stage: "fe3_sync",
       });
     }
-    const xmlNode = childNode(update, "Xml");
+    const xmlNode = uniqueChildNode(
+      update,
+      "Xml",
+      "FE3 Update 的 XML 文件元数据缺失或重复",
+      { stage: "fe3_sync" }
+    );
     if (!xmlNode || !String(xmlNode.text || "").trim()) {
       throw new DiscoveryError("FE3 Update 缺少 XML 文件元数据", {
         code: "fe3_metadata_incomplete",
@@ -1573,9 +1693,22 @@ async function getFileUrl(packageInfo, fileInfo, ring, args) {
   throwIfSoapFault(root);
   const matchingUrls = [];
   for (const location of findNodes(root, "FileLocation")) {
-    if (descendantText(location, "FileDigest").trim() === expectedDigest) {
-      const value = descendantText(location, "Url");
-      if (value) matchingUrls.push(normalizeCdnUrl(value));
+    const digestNodes = nonEmptyDescendants(location, "FileDigest");
+    if (digestNodes.length > 1) {
+      throw new DiscoveryError("FE3 FileLocation 返回了重复的 FileDigest", {
+        code: "fe3_metadata_ambiguous",
+        stage: "fe3_url",
+      });
+    }
+    if (digestNodes.length === 1 && String(digestNodes[0].text || "").trim() === expectedDigest) {
+      const urlNodes = nonEmptyDescendants(location, "Url");
+      if (urlNodes.length !== 1) {
+        throw new DiscoveryError("FE3 FileLocation 的下载 URL 缺失或重复", {
+          code: "fe3_metadata_ambiguous",
+          stage: "fe3_url",
+        });
+      }
+      matchingUrls.push(normalizeCdnUrl(String(urlNodes[0].text || "").trim()));
     }
   }
   const uniqueUrls = Array.from(new Set(matchingUrls));
@@ -2048,7 +2181,7 @@ function makeArtifact(packageInfo, fileInfo, url, probe) {
   if (
     !modifiedUtc ||
     UNSAFE_CONTROL_RE.test(modifiedUtc) ||
-    Number.isNaN(Date.parse(modifiedUtc))
+    !isValidTimestamp(modifiedUtc)
   ) {
     throw new DiscoveryError("FE3 未返回有效文件修改时间", {
       code: "invalid_file_metadata",
@@ -2274,6 +2407,7 @@ function usage() {
 
 function detectRuntimeEnvironment(options) {
   const values = options && typeof options === "object" ? options : {};
+  const hasExplicitOptions = options !== undefined && options !== null;
   const platform = String(
     values.platform === undefined ? process.platform : values.platform || "unknown"
   ).toLowerCase();
@@ -2295,13 +2429,26 @@ function detectRuntimeEnvironment(options) {
     values.environment && typeof values.environment === "object"
       ? values.environment
       : process.env || {};
+  // WSL can omit WSL_* variables in non-login SSH, service, and scheduled
+  // task environments. Only probe the host kernel for real runtime calls;
+  // synthetic self-test options stay deterministic and do not inspect host
+  // state. Callers may provide kernelRelease explicitly for testing.
+  const kernelRelease =
+    values.kernelRelease === undefined
+      ? hasExplicitOptions
+        ? ""
+        : safeKernelRelease()
+      : String(values.kernelRelease || "");
+  const wslKernelMarker =
+    platform === "linux" && /(?:microsoft|wsl)/i.test(kernelRelease);
   const environment =
     platform === "win32"
       ? "windows"
       : platform === "linux" &&
           (environmentVariables.WSL_INTEROP ||
             environmentVariables.WSL_DISTRO_NAME ||
-            environmentVariables.WSLENV)
+            environmentVariables.WSLENV ||
+            wslKernelMarker)
         ? "wsl"
         : platform === "linux"
           ? "linux"
@@ -2638,6 +2785,9 @@ function nextActionForError(error) {
   if (code === "fe3_metadata_incomplete") {
     return "FE3 更新元数据不完整；停止使用该结果，稍后重新查询并保留错误详情。";
   }
+  if (code === "fe3_metadata_ambiguous") {
+    return "FE3 返回了重复或相互冲突的字段；停止使用该结果，稍后重新查询并保留错误详情。";
+  }
   if (code === "invalid_file_metadata") {
     return "FE3 文件元数据不完整或格式无效；停止使用该结果，稍后重新查询。";
   }
@@ -2961,6 +3111,11 @@ function runSelfTests() {
   });
   add("URL 主机边界", () => {
     expectSelfTestError(
+      () => ensureAllowedHost("https://dl.delivery.mp.microsoft.com/file", []),
+      "skill_configuration_error",
+      "白名单"
+    );
+    expectSelfTestError(
       () => ensureAllowedHost("http://dl.delivery.mp.microsoft.com/file", ["dl.delivery.mp.microsoft.com"]),
       "discovery_error",
       "HTTPS"
@@ -2986,6 +3141,27 @@ function runSelfTests() {
     assertSelfTest(isCanonicalBase64(digest), "规范 Base64 判断错误");
     assertSelfTest(compareVersions("26.10.0.0", "26.9.99.0") > 0, "版本比较错误");
     expectSelfTestError(() => decodeBase64Digest("not-a-digest", 32, "SHA-256"), "discovery_error", "SHA-256");
+  });
+  add("FE3 重复字段拒绝", () => {
+    const payload = Buffer.from(
+      "<Envelope><UpdateInfo><ID>1</ID><ID>2</ID><Xml>&lt;UpdateIdentity UpdateID=\"00000000-0000-0000-0000-000000000000\" RevisionNumber=\"1\" /&gt;</Xml></UpdateInfo></Envelope>",
+      "utf8"
+    );
+    expectSelfTestError(
+      () => parseSyncUpdates(payload, EXPECTED_PACKAGE_FAMILY_NAME),
+      "fe3_metadata_incomplete",
+      "缺失或重复"
+    );
+  });
+  add("时间戳必须带时区", () => {
+    assertSelfTest(isValidTimestamp("2026-09-05T22:51:59.3418258Z"), "带 Z 的时间戳应有效");
+    assertSelfTest(isValidTimestamp("2026-09-05T22:51:59+08:00"), "带偏移的时间戳应有效");
+    assertSelfTest(isValidTimestamp("2026-09-05T22:51:59+23:59"), "合法的最大时区偏移应有效");
+    assertSelfTest(!isValidTimestamp("2026-09-05T22:51:59"), "缺少时区的时间戳不应接受");
+    assertSelfTest(!isValidTimestamp("2026-09-05 22:51:59Z"), "非 ISO 时间戳不应接受");
+    assertSelfTest(!isValidTimestamp("2026-02-30T00:00:00Z"), "不存在的日期不应接受");
+    assertSelfTest(!isValidTimestamp("2026-01-01T24:00:00Z"), "超出范围的小时不应接受");
+    assertSelfTest(!isValidTimestamp("2026-01-01T00:00:00+24:00"), "超出范围的时区不应接受");
   });
   add("运行环境诊断不泄露路径", () => {
     const runtime = runtimeEnvironment();
@@ -3102,6 +3278,26 @@ function runSelfTests() {
       });
       assertSelfTest(runtime.node_source_hint === item.expected, "版本管理器来源覆盖识别错误");
     }
+  });
+  add("WSL 内核标记回退", () => {
+    const wsl = detectRuntimeEnvironment({
+      platform: "linux",
+      architecture: "x64",
+      nodeVersion: "24.0.0",
+      execPath: "/usr/bin/node",
+      environment: {},
+      kernelRelease: "5.15.167.4-microsoft-standard-WSL2",
+    });
+    assertSelfTest(wsl.environment === "wsl", "缺少 WSL 环境变量时未识别内核标记");
+    const linux = detectRuntimeEnvironment({
+      platform: "linux",
+      architecture: "x64",
+      nodeVersion: "24.0.0",
+      execPath: "/usr/bin/node",
+      environment: {},
+      kernelRelease: "6.8.0-31-generic",
+    });
+    assertSelfTest(linux.environment === "linux", "普通 Linux 内核被误识别为 WSL");
   });
   const failures = [];
   for (const test of tests) {
