@@ -29,7 +29,7 @@ function usage() {
     "ChatGPT Store Download Skill 安装器",
     "",
     "用法：",
-    "  npx --yes @misonl/chatgpt-store-download [选项]",
+    "  npx --yes @mison/chatgpt-store-download [选项]",
     "",
     "选项：",
     "  --target PATH   安装到指定目录",
@@ -411,7 +411,7 @@ if (require.main === module) {
     console.error(
       "安装失败：" + displayText(message, 4096, { preserveNewlines: true })
     );
-    console.error("运行 npx --yes @misonl/chatgpt-store-download --help 查看用法。");
+    console.error("运行 npx --yes @mison/chatgpt-store-download --help 查看用法。");
     process.exitCode = 1;
   }
 }
