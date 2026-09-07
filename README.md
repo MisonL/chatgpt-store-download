@@ -16,13 +16,19 @@
 npx --yes chatgpt-store-download
 ```
 
-如果包名尚未发布到 npm, 使用 GitHub 源:
+如果包名尚未发布到 npm, 可使用 GitHub 源:
 
 ```sh
 npx --yes github:MisonL/chatgpt-store-download
 ```
 
-npm 6 不识别 `--yes`; 可去掉该选项并在提示时确认, 或直接使用 `node bin/install.js`。
+npm 12 默认可能禁止 Git 包。出现 `EALLOWGIT` 时, 使用只允许顶层 Git 包的选项:
+
+```sh
+npx --yes --allow-git=root github:MisonL/chatgpt-store-download
+```
+
+npm 6 不识别 `--yes`; 可去掉该选项并在提示时确认, 或直接使用 `node bin/install.js`。如果当前 npm 版本不支持 Git 源, 请改用已克隆仓库中的本地安装命令。
 
 如果 npm 或 GitHub 网络不可用, 在仓库目录执行:
 
