@@ -1,5 +1,5 @@
 {
-  "name": "chatgpt-store-download",
+  "name": "@misonl/chatgpt-store-download",
   "version": "1.0.0",
   "description": "Install the ChatGPT Store Download Codex Skill.",
   "bin": {

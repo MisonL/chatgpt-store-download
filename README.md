@@ -13,7 +13,7 @@
 如果 npm registry 已发布此包:
 
 ```sh
-npx --yes chatgpt-store-download
+npx --yes @misonl/chatgpt-store-download
 ```
 
 如果包名尚未发布到 npm, 可使用 GitHub 源:
@@ -39,7 +39,7 @@ node bin/install.js
 安装器只复制 Skill 文件, 不下载 ChatGPT MSIX。若 Codex 没有扫描 `.Agents/skills`, 请指定实际技能目录, 例如:
 
 ```sh
-npx --yes chatgpt-store-download --target "$HOME/.codex/skills/chatgpt-store-download"
+npx --yes @misonl/chatgpt-store-download --target "$HOME/.codex/skills/chatgpt-store-download"
 ```
 
 安装完成后, 如果 Codex 已经加载旧版本, 请重新打开会话。
