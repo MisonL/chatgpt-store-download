@@ -4,7 +4,7 @@
 
 > npm 包与 Skill 名：`chatgpt-store-links-skill`
 >
-> GitHub：[`MisonL/chatgpt-store-download`](https://github.com/MisonL/chatgpt-store-download)
+> GitHub：[`MisonL/chatgpt-store-links-skill`](https://github.com/MisonL/chatgpt-store-links-skill)
 
 本项目只负责链接发现和校验，不下载完整 MSIX、不获取许可证、不安装应用，也不修改 Windows 设置。
 
@@ -34,7 +34,7 @@ npx --yes @mison/chatgpt-store-links-skill \
 如果 npm 包暂不可用，可从 GitHub 源安装：
 
 ```sh
-npx --yes --allow-git=root github:MisonL/chatgpt-store-download
+npx --yes --allow-git=root github:MisonL/chatgpt-store-links-skill
 ```
 
 如果 npm 版本不支持 Git 源，在已克隆的仓库目录运行 `node bin/install.js`；npm 6 可去掉 `--yes`。安装完成后重新打开 Codex 会话。

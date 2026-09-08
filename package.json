@@ -24,11 +24,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/MisonL/chatgpt-store-download.git"
+    "url": "git+https://github.com/MisonL/chatgpt-store-links-skill.git"
   },
-  "homepage": "https://github.com/MisonL/chatgpt-store-download",
+  "homepage": "https://github.com/MisonL/chatgpt-store-links-skill",
   "bugs": {
-    "url": "https://github.com/MisonL/chatgpt-store-download/issues"
+    "url": "https://github.com/MisonL/chatgpt-store-links-skill/issues"
   },
   "engines": {
     "node": ">=14"
