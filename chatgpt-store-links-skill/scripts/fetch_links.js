@@ -2224,6 +2224,7 @@ function parseArgs(argv) {
     arch: "x64",
     timeout: 45,
     json: false,
+    redactUrl: false,
     insecureTls: DEFAULT_INSECURE_TLS,
     tlsMode: DEFAULT_INSECURE_TLS ? "insecure" : "strict",
   };
@@ -2236,6 +2237,10 @@ function parseArgs(argv) {
     }
     if (item === "--json") {
       args.json = true;
+      continue;
+    }
+    if (item === "--redact-url") {
+      args.redactUrl = true;
       continue;
     }
     if (item === "--self-test") {
@@ -2395,6 +2400,7 @@ function usage() {
     "  --ring Retail           FE3 通道，默认 Retail",
     "  --timeout 45            单次请求超时秒数（1-300）",
     "  --json                  输出 JSON",
+    "  --redact-url            隐藏输出中的临时签名查询参数（仍保留主机和路径）",
     "  --self-test             运行离线回归自测（不访问网络、不读写磁盘）",
     "  --insecure-tls          跳过 TLS 证书校验（默认，仅兼容性/诊断）",
     "  --strict-tls            启用 TLS 证书校验",
@@ -2826,7 +2832,7 @@ function nextActionForError(error) {
   return "根据错误阶段检查参数、网络或微软接口响应。";
 }
 
-function printText(result) {
+function printText(result, redactUrl) {
   const product = result.product;
   console.log(
     "产品：" +
@@ -2892,8 +2898,8 @@ function printText(result) {
     console.log("修改时间：" + terminalText(artifact.modified_utc, "未知", 128));
     console.log("SHA-1（FE3 Base64）：" + terminalText(artifact.sha1_base64, "未知", 128));
     console.log("SHA-256：" + terminalText(artifact.sha256, "未知", 128));
-    console.log("直链：" + terminalText(artifact.url, "未知", 8192));
-    console.log("解析地址：" + terminalText(artifact.resolved_url, "未知", 8192));
+    console.log("直链：" + terminalText(displayUrl(artifact.url, redactUrl), "未知", 8192));
+    console.log("解析地址：" + terminalText(displayUrl(artifact.resolved_url, redactUrl), "未知", 8192));
     console.log("URL 检查时间：" + terminalText(artifact.url_checked_at_utc, "未知", 128));
     console.log("探针尝试次数：" + artifact.probe_attempts);
     console.log("探针 TLS：" + (artifact.tls_verified ? "已验证" : "未验证"));
@@ -2938,6 +2944,33 @@ function printText(result) {
   console.log("");
   console.log("提示：本 Skill 只发现并校验官方临时直链，不下载完整文件、不安装应用、不获取许可证。");
   console.log("微软 CDN 直链带时效签名，请尽快下载；失效后重新运行本脚本。");
+}
+
+function displayUrl(value, redact) {
+  const text = String(value || "");
+  if (!redact || !text) return text;
+  try {
+    const parsed = new URL(text);
+    parsed.search = parsed.search ? "?redacted" : "";
+    parsed.hash = "";
+    return parsed.toString();
+  } catch (_) {
+    return "<redacted>";
+  }
+}
+
+function redactReportUrls(report) {
+  if (!report || typeof report !== "object") return report;
+  const copy = JSON.parse(JSON.stringify(report));
+  copy.redact_url = true;
+  if (Array.isArray(copy.artifacts)) {
+    copy.artifacts.forEach((artifact) => {
+      artifact.url = displayUrl(artifact.url, true);
+      artifact.resolved_url = displayUrl(artifact.resolved_url, true);
+      artifact.source_url = displayUrl(artifact.source_url, true);
+    });
+  }
+  return copy;
 }
 
 function assertSelfTest(condition, message) {
@@ -3354,8 +3387,8 @@ async function main() {
       return report.ok ? 0 : 1;
     }
     const result = attachRuntimeEnvironment(await run(args));
-    if (args.json) console.log(JSON.stringify(result, null, 2));
-    else printText(result);
+    if (args.json) console.log(JSON.stringify(args.redactUrl ? redactReportUrls(result) : result, null, 2));
+    else printText(result, args.redactUrl);
     return result.ok ? 0 : 1;
   } catch (error) {
     const details = errorObject(error);
