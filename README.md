@@ -11,7 +11,7 @@
 ### 安装 Skill
 
 ```sh
-npx --yes @mison/chatgpt-store-skill-links
+npx --yes @mison/chatgpt-store-links-skill
 ```
 
 默认安装到：
@@ -23,7 +23,7 @@ npx --yes @mison/chatgpt-store-skill-links
 指定 Codex 技能目录：
 
 ```sh
-npx --yes @mison/chatgpt-store-skill-links \
+npx --yes @mison/chatgpt-store-links-skill \
   --target "$HOME/.codex/skills/chatgpt-store-download"
 ```
 

@@ -1,5 +1,5 @@
 {
-  "name": "@mison/chatgpt-store-skill-links",
+  "name": "@mison/chatgpt-store-links-skill",
   "version": "1.0.0",
   "description": "Install the ChatGPT Store Download Codex Skill.",
   "bin": {
