@@ -26,7 +26,7 @@ function configureUtf8Output() {
 
 function usage() {
   return [
-    "ChatGPT Store Download Skill 安装器",
+    "ChatGPT Store Links Skill 安装器",
     "",
     "用法：",
     "  npx --yes @mison/chatgpt-store-links-skill [选项]",
@@ -398,7 +398,7 @@ function main() {
   }
   ensureSupportedNodeVersion();
   const destination = install(args.target || defaultTarget());
-  console.log("已安装 ChatGPT Store Download Skill：" + displayText(destination));
+  console.log("已安装 ChatGPT Store Links Skill：" + displayText(destination));
   console.log("如 Codex 已加载旧版本，请重新打开会话。");
   return 0;
 }

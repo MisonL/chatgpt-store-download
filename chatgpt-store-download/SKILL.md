@@ -3,7 +3,7 @@ name: chatgpt-store-download
 description: 当用户需要不依赖商店界面获取微软官方 ChatGPT Work/Codex Windows MSIX 临时下载直链时使用。支持 macOS、Linux、Windows 和 WSL 上的 Node.js、NVM 等常见运行方式；通过 StoreEdge 和 FE3 查询并校验目标架构、包身份、摘要和 CDN 响应；默认兼容模式跳过 TLS 证书校验并明确标记，可用 --strict-tls 恢复严格校验；不下载完整文件、不安装应用、不绕过微软许可。
 ---
 
-# ChatGPT Store Download
+# ChatGPT Store Links Skill
 
 这个 Skill 只负责发现并校验微软官方 ChatGPT Work/Codex（产品 ID `9PLM9XGG6VKS`）的 Windows MSIX 临时直链和元数据。它不是完整离线安装器：不会把大文件写入磁盘，不获取许可证，不登录 Microsoft Store，不安装应用，也不修改系统设置。
 
