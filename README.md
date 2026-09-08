@@ -1,6 +1,8 @@
-# ChatGPT Store Download
+# ChatGPT Store Links Skill
 
 用于查询并校验微软官方 ChatGPT Work/Codex Windows MSIX 临时下载直链的 Codex Skill。
+
+npm 包：[`@mison/chatgpt-store-links-skill`](https://www.npmjs.com/package/@mison/chatgpt-store-links-skill)。内部 Skill 名和默认安装目录保持 `chatgpt-store-download`，以兼容现有调用。
 
 本项目只负责 URL 发现和校验，不下载完整 MSIX，不获取许可证，也不安装应用或修改 Windows 设置。
 
