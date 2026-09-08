@@ -1,5 +1,5 @@
 ---
-name: chatgpt-store-download
+name: chatgpt-store-links-skill
 description: 当用户需要不依赖商店界面获取微软官方 ChatGPT Work/Codex Windows MSIX 临时下载直链时使用。支持 macOS、Linux、Windows 和 WSL 上的 Node.js、NVM 等常见运行方式；通过 StoreEdge 和 FE3 查询并校验目标架构、包身份、摘要和 CDN 响应；默认兼容模式跳过 TLS 证书校验并明确标记，可用 --strict-tls 恢复严格校验；不下载完整文件、不安装应用、不绕过微软许可。
 ---
 
@@ -31,7 +31,7 @@ description: 当用户需要不依赖商店界面获取微软官方 ChatGPT Work
 
 ## 各平台启动方式
 
-- 安装器：如果 npm registry 已发布包，可运行 `npx --yes @mison/chatgpt-store-links-skill`；如果尚未发布，可运行 `npx --yes github:MisonL/chatgpt-store-download`。npm 12 默认可能禁止 Git 包，出现 `EALLOWGIT` 时使用 `npx --yes --allow-git=root github:MisonL/chatgpt-store-download`；如果 npm 不支持 Git 源，改在仓库根目录运行 `node bin/install.js`。`npx --yes` 需要 npm 7+；npm 6 可去掉 `--yes` 并在提示时确认。安装器默认写入 `$HOME/.Agents/skills/chatgpt-store-download`（Windows 为 `%USERPROFILE%\\.Agents\\skills\\chatgpt-store-download`），可用 `--target` 覆盖。安装器只复制 Skill 文件，不下载 MSIX。
+- 安装器：如果 npm registry 已发布包，可运行 `npx --yes @mison/chatgpt-store-links-skill`；如果尚未发布，可运行 `npx --yes github:MisonL/chatgpt-store-download`。npm 12 默认可能禁止 Git 包，出现 `EALLOWGIT` 时使用 `npx --yes --allow-git=root github:MisonL/chatgpt-store-download`；如果 npm 不支持 Git 源，改在仓库根目录运行 `node bin/install.js`。`npx --yes` 需要 npm 7+；npm 6 可去掉 `--yes` 并在提示时确认。安装器默认写入 `$HOME/.Agents/skills/chatgpt-store-links-skill`（Windows 为 `%USERPROFILE%\\.Agents\\skills\\chatgpt-store-links-skill`），可用 `--target` 覆盖。安装器只复制 Skill 文件，不下载 MSIX。
 - macOS/Linux（系统 Node.js）：`node ./scripts/fetch_links.js --arch x64 --json`。常见可执行文件位置包括 `/usr/bin/node`、`/usr/local/bin/node` 和 Homebrew 的 `/opt/homebrew/bin/node`；部分发行版只提供 `nodejs` 命令，此时应建立当前用户可控的 `node` 命令映射或使用 `nodejs` 直接启动脚本，并确认版本至少为 14。
 - macOS/Linux（NVM）：在 bash/zsh 中执行 `. "${NVM_DIR:-$HOME/.nvm}/nvm.sh" && nvm use default && node ./scripts/fetch_links.js --arch x64 --json`。NVM 初始化脚本依赖具体 shell；若当前 `/bin/sh` 无法加载它，改用 bash/zsh，或直接调用 `~/.nvm/versions/node/<版本>/bin/node`。若使用非默认版本，将 `nvm use default` 换成明确版本；NVM 只需在当前 shell 初始化一次。
 - Windows CMD：`chcp 65001 >NUL` 后执行 `node "scripts\\fetch_links.js" --arch x64 --json`。如果 `node` 不在 PATH，先在同一窗口初始化 nvm-windows/Volta 等版本管理器，或使用 `where node` 找到的完整路径；Git Bash/MSYS2 中则使用 Unix 风格路径，并确认不是把 `node.exe` 的 Windows 路径传给 WSL 的 Linux Node.js。

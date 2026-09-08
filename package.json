@@ -1,15 +1,15 @@
 {
   "name": "@mison/chatgpt-store-links-skill",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Install the ChatGPT Store Links Codex Skill.",
   "bin": {
-    "chatgpt-store-download": "bin/install.js"
+    "chatgpt-store-links-skill": "bin/install.js"
   },
   "files": [
     "bin/install.js",
-    "chatgpt-store-download/SKILL.md",
-    "chatgpt-store-download/agents/openai.yaml",
-    "chatgpt-store-download/scripts/fetch_links.js",
+    "chatgpt-store-links-skill/SKILL.md",
+    "chatgpt-store-links-skill/agents/openai.yaml",
+    "chatgpt-store-links-skill/scripts/fetch_links.js",
     "LICENSE",
     "README.md"
   ],
@@ -34,7 +34,7 @@
     "node": ">=14"
   },
   "scripts": {
-    "check": "node --check bin/install.js && node --check chatgpt-store-download/scripts/fetch_links.js && node --check test/install.test.js && node test/install.test.js && node chatgpt-store-download/scripts/fetch_links.js --self-test --json",
+    "check": "node --check bin/install.js && node --check chatgpt-store-links-skill/scripts/fetch_links.js && node --check test/install.test.js && node test/install.test.js && node chatgpt-store-links-skill/scripts/fetch_links.js --self-test --json",
     "test": "npm run check"
   }
 }

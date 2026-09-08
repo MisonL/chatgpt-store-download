@@ -6,7 +6,7 @@ const os = require("os");
 const path = require("path");
 
 const packageInfo = require("../package.json");
-const skillSource = path.resolve(__dirname, "..", "chatgpt-store-download");
+const skillSource = path.resolve(__dirname, "..", "chatgpt-store-links-skill");
 const ANSI_ESCAPE_RE = /\u001b\[[0-?]*[ -/]*[@-~]/g;
 const UNSAFE_CONTROL_GLOBAL_RE =
   /[\u0000-\u001f\u007f-\u009f\u061c\u200b-\u200f\u2028-\u202e\u2060-\u2064\u2066-\u206f\ufeff]/g;
@@ -36,7 +36,7 @@ function usage() {
     "  --version       显示版本",
     "  --help          显示帮助",
     "",
-    "默认目录：~/.Agents/skills/chatgpt-store-download（当前用户主目录）",
+    "默认目录：~/.Agents/skills/chatgpt-store-links-skill（当前用户主目录）",
     "此命令只安装 Codex Skill，不下载或安装 ChatGPT MSIX。",
   ].join("\n");
 }
@@ -79,7 +79,7 @@ function parseArgs(argv) {
 }
 
 function defaultTarget() {
-  return path.join(os.homedir(), ".Agents", "skills", "chatgpt-store-download");
+  return path.join(os.homedir(), ".Agents", "skills", "chatgpt-store-links-skill");
 }
 
 function ensureSupportedNodeVersion() {
@@ -140,7 +140,7 @@ function canonicalPathForComparison(target) {
 
 function assertSourceLayout() {
   if (!fs.existsSync(skillSource) || !fs.statSync(skillSource).isDirectory()) {
-    throw new Error("npm 包缺少 chatgpt-store-download Skill 目录");
+    throw new Error("npm 包缺少 chatgpt-store-links-skill Skill 目录");
   }
   for (const relative of requiredFiles) {
     const source = path.join(skillSource, relative);
@@ -270,8 +270,8 @@ function install(target) {
   const createdDirectories = [];
   let commitCompleted = false;
   try {
-    staging = uniqueSiblingDirectory(parent, ".chatgpt-store-download-staging-");
-    backup = uniqueSiblingDirectory(parent, ".chatgpt-store-download-backup-");
+    staging = uniqueSiblingDirectory(parent, ".chatgpt-store-links-skill-staging-");
+    backup = uniqueSiblingDirectory(parent, ".chatgpt-store-links-skill-backup-");
     copyTree(skillSource, staging);
     // Re-check after staging completes so a concurrent replacement of the
     // target cannot turn a preflighted directory into a symlink or file.

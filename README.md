@@ -2,9 +2,7 @@
 
 用于查询并校验微软官方 ChatGPT Work/Codex Windows MSIX 临时下载直链的 Codex Skill。
 
-npm 包：[`@mison/chatgpt-store-links-skill`](https://www.npmjs.com/package/@mison/chatgpt-store-links-skill)。内部 Skill 名和默认安装目录保持 `chatgpt-store-download`，以兼容现有调用。
-
-安装器提供的命令名仍为 `chatgpt-store-download`；这是兼容性标识，不是 npm 包名。
+npm 包和 Skill 名均为 `chatgpt-store-links-skill`；GitHub 仓库仍保留原地址以避免破坏已有链接。
 
 本项目只负责 URL 发现和校验，不下载完整 MSIX，不获取许可证，也不安装应用或修改 Windows 设置。
 
@@ -21,14 +19,14 @@ npx --yes @mison/chatgpt-store-links-skill
 默认安装到：
 
 ```text
-~/.Agents/skills/chatgpt-store-download
+~/.Agents/skills/chatgpt-store-links-skill
 ```
 
 指定 Codex 技能目录：
 
 ```sh
 npx --yes @mison/chatgpt-store-links-skill \
-  --target "$HOME/.codex/skills/chatgpt-store-download"
+  --target "$HOME/.codex/skills/chatgpt-store-links-skill"
 ```
 
 如果 npm 包暂不可用，可从 GitHub 源安装：
@@ -114,19 +112,19 @@ npm pack --dry-run
 ## 目录结构
 
 ```text
-chatgpt-store-download/
+chatgpt-store-links-skill/
 |-- README.md
 |-- LICENSE
 |-- package.json
 |-- bin/install.js
 |-- test/install.test.js
-`-- chatgpt-store-download/
+`-- chatgpt-store-links-skill/
     |-- SKILL.md
     |-- agents/openai.yaml
     `-- scripts/fetch_links.js
 ```
 
-协议流程、JSON 字段和错误码见 [chatgpt-store-download/SKILL.md](chatgpt-store-download/SKILL.md)。
+协议流程、JSON 字段和错误码见 [chatgpt-store-links-skill/SKILL.md](chatgpt-store-links-skill/SKILL.md)。
 
 ## 许可证
 

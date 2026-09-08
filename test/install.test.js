@@ -20,7 +20,7 @@ function removeTree(target) {
 }
 
 function temporaryDirectory() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), "chatgpt-store-download-test-"));
+  return fs.mkdtempSync(path.join(os.tmpdir(), "chatgpt-store-links-skill-test-"));
 }
 
 function expectFailure(operation, pattern) {
@@ -45,7 +45,7 @@ assert.strictEqual(
 );
 assert.strictEqual(
   installer.defaultTarget(),
-  path.join(os.homedir(), ".Agents", "skills", "chatgpt-store-download")
+  path.join(os.homedir(), ".Agents", "skills", "chatgpt-store-links-skill")
 );
 expectFailure(() => installer.parseArgs(["--target", "--unknown"]), /缺少目录参数/);
 expectFailure(() => installer.parseArgs(["--target", "-unknown"]), /缺少目录参数/);
@@ -58,7 +58,7 @@ assert.deepStrictEqual(installer.parseArgs(["--target=-named", "--version"]), {
 
 const root = temporaryDirectory();
 try {
-  const destination = path.join(root, "nested", "chatgpt-store-download");
+  const destination = path.join(root, "nested", "chatgpt-store-links-skill");
   fs.mkdirSync(destination, { recursive: true });
   const customFile = path.join(destination, "keep-me.txt");
   fs.writeFileSync(customFile, "user data", "utf8");
@@ -79,7 +79,7 @@ try {
   assert.strictEqual(fs.readFileSync(customFile, "utf8"), "user data");
   assert.deepStrictEqual(
     fs.readdirSync(path.dirname(destination)).filter((name) =>
-      name.startsWith(".chatgpt-store-download-")
+      name.startsWith(".chatgpt-store-links-skill-")
     ),
     []
   );
@@ -117,7 +117,7 @@ try {
     );
   }
   assert.deepStrictEqual(
-    fs.readdirSync(root).filter((name) => name.startsWith(".chatgpt-store-download-")),
+    fs.readdirSync(root).filter((name) => name.startsWith(".chatgpt-store-links-skill-")),
     []
   );
 
@@ -139,7 +139,7 @@ try {
     true
   );
   for (const name of fs.readdirSync(root)) {
-    if (name.startsWith(".chatgpt-store-download-")) removeTree(path.join(root, name));
+    if (name.startsWith(".chatgpt-store-links-skill-")) removeTree(path.join(root, name));
   }
 
   const invalidFileTarget = path.join(root, "invalid-file");
@@ -152,7 +152,7 @@ try {
   expectFailure(() => installer.install(invalidLayout), /目标文件不是普通文件/);
 
   expectFailure(() => installer.install(path.resolve(__dirname, "..")), /重叠/);
-  const caseVariantSource = path.join(path.dirname(path.resolve(__dirname, "..")), "CHATGPT-STORE-DOWNLOAD");
+  const caseVariantSource = path.join(path.dirname(path.resolve(__dirname, "..")), "CHATGPT-STORE-LINKS-SKILL");
   try {
     if (
       fs.realpathSync.native(caseVariantSource) ===
