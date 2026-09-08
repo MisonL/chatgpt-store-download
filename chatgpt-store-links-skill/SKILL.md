@@ -57,13 +57,14 @@ node "<SKILL_DIR>/scripts/fetch_links.js" --self-test --json
 - `--ring Retail`：FE3 发布通道；稳定版使用 `Retail`。
 - `--timeout 45`：单次 HTTP 请求超时秒数，必须是 1-300 之间的数字。
 - `--json`：输出机器可读 JSON，适合下载器或自动化调用。
+- `--redact-url`：隐藏输出中的临时签名查询参数，适合终端日志和 CI；不会改变实际请求 URL。JSON 输出会保留主机和路径，并将 `redact_url` 设为 `true`。
 - `--self-test`：运行内置离线回归自测；不访问网络、不读写磁盘，失败退出码为 1。当前包含 22 项检查。
 - `--insecure-tls`：跳过 TLS 证书校验；当前为默认模式，可显式写出以增强可读性。结果必须标记 `tls_verified: false`，不得隐瞒。
 - `--strict-tls`：启用 TLS 证书和主机名校验；与 `--insecure-tls` 不能同时使用。
 
 带值选项必须使用非空值；如果值缺失、位于命令末尾，或后一个 token 是另一个选项，脚本会返回 `missing_argument_value`，不会把选项名误当成值。两个 TLS 选项同时出现时会在参数阶段停止，不发送网络请求；JSON 会返回 `tls_mode: "conflict"`、`tls_verification_enabled: false`、`tls_verified: false`，并说明“TLS 参数冲突，未执行网络请求”。
 
-脚本不保存 cookie、SOAP 响应或直链。若调用方要保存 JSON 或下载文件，必须由调用方显式重定向或执行下载，并在目标机重新验收。
+脚本不保存 cookie、SOAP 响应或直链。临时签名可能出现在输出中；写入日志时建议使用 `--redact-url`。若调用方要保存 JSON 或下载文件，必须由调用方显式重定向或执行下载，并在目标机重新验收。
 
 ## 查询和校验流程
 
